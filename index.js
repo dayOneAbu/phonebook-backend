@@ -1,4 +1,5 @@
 const express = require("express");
+const morgan = require("morgan");
 const app = express();
 let persons = [
   {
@@ -42,8 +43,15 @@ let persons = [
     id: 8,
   },
 ];
-
+morgan.token("payload", function (req, res) {
+  return JSON.stringify(req.body);
+});
 app.use(express.json());
+app.use(
+  morgan(
+    ":method :url :status :res[content-length] - :response-time ms :payload"
+  )
+);
 
 app.get("/api/persons", (req, res) => {
   res.status(200).json(persons);
@@ -58,15 +66,15 @@ app.get("/api/persons/:id", (req, res) => {
 app.post("/api/persons/", (req, res) => {
   const { name, phone } = req.body;
   if (!name || !phone || persons.some((person) => person.name === name)) {
-    res.status(204).json({ error: "name must be unique" });
+    return res.status(409).json({ error: "name must be unique" });
   }
-  const newPhonebook = persons.concat({
+  persons.push({
     name,
     phone,
     id: Math.max(...persons.map((p) => p.id)) + 1,
   });
 
-  res.status(201).json(newPhonebook);
+  res.status(201).json(persons);
 });
 app.delete("/api/persons/:id", (req, res) => {
   const newPhonebook = persons.filter(
