@@ -1,6 +1,8 @@
 const express = require("express");
 const morgan = require("morgan");
+const cors = require("cors");
 const app = express();
+
 let persons = [
   {
     name: "Arto Hellas",
@@ -52,6 +54,8 @@ app.use(
     ":method :url :status :res[content-length] - :response-time ms :payload"
   )
 );
+app.use(cors());
+app.use(express.static("build"));
 
 app.get("/api/persons", (req, res) => {
   res.status(200).json(persons);
@@ -68,13 +72,17 @@ app.post("/api/persons/", (req, res) => {
   if (!name || !phone || persons.some((person) => person.name === name)) {
     return res.status(409).json({ error: "name must be unique" });
   }
-  persons.push({
+  const generateId = (data) => {
+    return data.length > 0 ? Math.max(...data.map((p) => p.id)) + 1 : 0;
+  };
+  const newPhonebook = {
     name,
     phone,
-    id: Math.max(...persons.map((p) => p.id)) + 1,
-  });
+    id: generateId(persons),
+  };
+  persons.concat(newPhonebook);
 
-  res.status(201).json(persons);
+  res.status(201).json(newPhonebook);
 });
 app.delete("/api/persons/:id", (req, res) => {
   const newPhonebook = persons.filter(
@@ -94,5 +102,5 @@ app.get("/info", (req, res) => {
   </div>`);
 });
 
-const PORT = "3001";
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`server is up and running on port ${PORT}`));
