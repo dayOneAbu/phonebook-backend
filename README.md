@@ -2,7 +2,7 @@
 
 Add your contacts and search through your contacts easily.
 
-## A full-Stack Node.js Application developed express and react.js
+## A full-Stack Node.js Application developed express and react.js with mongoDB
 
 check it out.\
 Open [https://restless-frog-1318.fly.dev/](https://restless-frog-1318.fly.dev/) to view it in your browser.
