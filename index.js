@@ -1,50 +1,12 @@
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+const Person = require("./models/person");
+const connectDB = require("./mongo");
 const app = express();
+connectDB();
 
-let persons = [
-  {
-    name: "Arto Hellas",
-    number: "040-123456",
-    id: 1,
-  },
-  {
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-    id: 2,
-  },
-  {
-    name: "Dan Abramov",
-    number: "12-43-234345",
-    id: 3,
-  },
-  {
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-    id: 4,
-  },
-  {
-    name: "wew",
-    phone: "9865989856",
-    id: 5,
-  },
-  {
-    name: "wew23",
-    phone: "9865989856",
-    id: 6,
-  },
-  {
-    name: "wew2323",
-    phone: "9865989856qq",
-    id: 7,
-  },
-  {
-    name: "new",
-    phone: "11113",
-    id: 8,
-  },
-];
 morgan.token("payload", function (req, res) {
   return JSON.stringify(req.body);
 });
@@ -57,38 +19,33 @@ app.use(
 app.use(cors());
 app.use(express.static("build"));
 
-app.get("/api/persons", (req, res) => {
-  res.status(200).json(persons);
+app.get("/api/persons/", (req, res) => {
+  Person.find().then((persons) => res.status(200).send(persons));
 });
 app.get("/api/persons/:id", (req, res) => {
-  const singlePerson = persons.find(
-    (person) => person.id.toString() === req.params.id
-  );
-
-  res.status(200).json(singlePerson);
+  Person.findById(req.params.id).then((singlePerson) => {
+    res.status(200).json(singlePerson);
+  });
 });
+
 app.post("/api/persons/", (req, res) => {
   const { name, phone } = req.body;
-  if (!name || !phone || persons.some((person) => person.name === name)) {
-    return res.status(409).json({ error: "name must be unique" });
-  }
-  const generateId = (data) => {
-    return data.length > 0 ? Math.max(...data.map((p) => p.id)) + 1 : 0;
-  };
-  const newPhonebook = {
-    name,
-    phone,
-    id: generateId(persons),
-  };
-  persons.concat(newPhonebook);
-
-  res.status(201).json(newPhonebook);
+  Person.find({ name }).then((person) => {
+    if (!name || !phone || person.length > 0) {
+      return res.status(409).json({ error: "name must be unique" });
+    }
+    const temp = new Person({
+      name,
+      phone,
+    });
+    temp.save().then((newPerson) => {
+      res.status(201).json(newPerson);
+    });
+  });
 });
 app.delete("/api/persons/:id", (req, res) => {
-  const newPhonebook = persons.filter(
-    (person) => person.id.toString() !== req.params.id
-  );
-  res.json(newPhonebook);
+  const deletedPerson = Person.deleteOne({ id: req.params.id });
+  res.status(200).json(deletedPerson);
 });
 app.get("/info", (req, res) => {
   res.send(`
@@ -102,5 +59,5 @@ app.get("/info", (req, res) => {
   </div>`);
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`server is up and running on port ${PORT}`));
