@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
@@ -19,8 +21,6 @@ app.use(
     ":method :url :status :res[content-length] - :response-time ms :payload"
   )
 );
-
-app.use(errorHandler);
 
 // routes
 app.get("/api/persons/", (req, res, next) => {
@@ -73,10 +73,15 @@ app.post("/api/persons/", (req, res, next) => {
       })
       .catch((error) => next(error));
   });
+  // .catch((error) => next(error));
 });
 app.put("/api/persons/:id", (req, res, next) => {
   const { name, phone } = req.body;
-  Person.findOneAndUpdate(req.params.id, { name, phone }, { new: true })
+  Person.findOneAndUpdate(
+    req.params.id,
+    { name, phone },
+    { new: true, runValidators: true, context: "query" }
+  )
     .then((updatedPerson) => {
       res.status(200).json(updatedPerson);
     })
@@ -107,5 +112,6 @@ const unknownEndpoint = (req, res) => {
   res.status(404).send({ error: "unknown endpoint" });
 };
 app.use(unknownEndpoint);
+app.use(errorHandler);
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`server is up and running on port ${PORT}`));
